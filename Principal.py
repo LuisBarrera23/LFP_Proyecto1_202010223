@@ -1,8 +1,9 @@
-from tkinter import *
-import tkinter
+from tkinter import Button, Tk,ttk
 class principal:
+    
     def __init__(self):
-        self.ventana=tkinter.Tk()
+        self.ventana=Tk()
+        self.ventana.configure(background="#008080")
         ancho=1200
         alto=700
         x=self.ventana.winfo_screenwidth()
@@ -13,5 +14,11 @@ class principal:
         y=(y-alto)/2
         self.ventana.geometry('%dx%d+%d+%d' % (ancho, alto, x, y))
         self.ventana.title("Bitxelart")
-        self.ventana
+        b1=Button(self.ventana,text="Cargar",font=("Verdana",10),borderwidth=3,background="beige",command=cargarArchivo).place(x=20,y=20,height=40,width=100)
+        b2=Button(self.ventana,text="Analizar",font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
+        b2=Button(self.ventana,text="Reportes",font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
+        b2=Button(self.ventana,text="Salir",font=("Verdana",10),borderwidth=3,background="Red").place(x=320,y=20,height=40,width=100)
         self.ventana.mainloop()
+        
+def cargarArchivo():
+            print("pulsacion cargar")
