@@ -1,5 +1,9 @@
 from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
 import tkinter
+from Error import Error
+from Token import Token
+Errores=[]
+Tokens=[]
 ventana=Tk()
 canvas = Canvas()
 
