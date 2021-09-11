@@ -1,4 +1,4 @@
-from tkinter import Button, Image, Tk,ttk,Canvas
+from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
 import tkinter
 ventana=Tk()
 canvas = Canvas()
@@ -18,6 +18,7 @@ def generarVentana():
     y=(y-alto)/2
     ventana.geometry('%dx%d+%d+%d' % (ancho, alto, x, y))
     ventana.title("Bitxelart")
+    ventana.iconbitmap('Complementos\Mario.ico')
     b1=Button(ventana,text="Cargar",font=("Verdana",10),borderwidth=3,background="beige",command=cargarArchivo).place(x=20,y=20,height=40,width=100)
     b2=Button(ventana,text="Analizar",font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
     b3=Button(ventana,text="Reportes",font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
@@ -31,9 +32,73 @@ def generarVentana():
     ventana.mainloop()
 
 def cargarArchivo():
-    global canvas
-    print("pulsacion cargar")
-    canvas.delete(tkinter.ALL)
+    archivo=filedialog.askopenfile(
+        title="Por favor seleccine un archivo",
+        initialdir="./",
+        filetypes=(
+            ("Todos los archivos","*.*"),("Archivo PXLA","*.PXLA")
+        )
+    )
+
+    if archivo is None:
+        messagebox.showerror(message="No selecciono ningun archivo, por favor vuelva a intentarlo",title="Error")
+        print("No selecciono ningun archivo, por favor vuelva a intentarlo")
+    else:
+        texto=archivo.read()
+        archivo.close()
+        analizar(texto)
+
+def isLetra(C):
+    if((ord(C) >= 65 and ord(C) <= 90) or (ord(C) >= 97 and ord(C) <= 122) or ord(C) == 164 or ord(C) == 165):
+        return True
+    else:
+        return False
+
+def isNumero(C):
+    if ((ord(C) >= 48 and ord(C) <= 57)):
+        return True
+    else:
+        return False
+
+def analizar(txt):
+    fila=1
+    columna=1
+    estado=0
+    error=False
+    LexemaActual=""
+    for c in txt:
+        #print("Fila:",fila,"Columna:",columna,"caracter:",c)
+        if estado==0 and ord(c)!=32:
+            if isLetra(c):
+                LexemaActual+=c
+                estado=1
+            else:
+                print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
+                LexemaActual=""
+        if estado==1:
+            if isLetra(c):
+                LexemaActual+=c
+                estado=1
+            elif ord(c)==61:#signo =
+                estado=2
+            else:
+                print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
+                
+
+
+
+        # controlador de filas y columnas
+        if ord(c) == 10:
+            columna=1
+            fila+=1
+            continue
+        elif(ord(c) == 9): #para tabulación
+            columna+=4
+            continue
+        elif(ord(c)==32):
+            columna+=1
+            continue
+        columna+=1
 
 
 def VerOriginal():
