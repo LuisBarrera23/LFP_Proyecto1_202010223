@@ -2,8 +2,12 @@ from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
 import tkinter
 from Error import Error
 from Token import Token
+
+
+#Variables globales
 Errores=[]
 Tokens=[]
+texto=""
 ventana=Tk()
 canvas = Canvas()
 
@@ -23,8 +27,8 @@ def generarVentana():
     ventana.geometry('%dx%d+%d+%d' % (ancho, alto, x, y))
     ventana.title("Bitxelart")
     ventana.iconbitmap('Complementos\Mario.ico')
-    b1=Button(ventana,text="Cargar",font=("Verdana",10),borderwidth=3,background="beige",command=cargarArchivo).place(x=20,y=20,height=40,width=100)
-    b2=Button(ventana,text="Analizar",font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
+    b1=Button(ventana,text="Cargar",command=cargarArchivo,font=("Verdana",10),borderwidth=3,background="beige").place(x=20,y=20,height=40,width=100)
+    b2=Button(ventana,text="Analizar",command=Solicitaranalisis,font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
     b3=Button(ventana,text="Reportes",font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
     b4=Button(ventana,text="Salir",command=ventana.destroy,font=("Verdana",10),borderwidth=3,background="Red").place(x=320,y=20,height=40,width=100)
     b5=Button(ventana,text="Original",command=VerOriginal,font=("Verdana",10),borderwidth=3,background="#79FF00").place(x=20,y=400,height=40,width=180)
@@ -35,7 +39,17 @@ def generarVentana():
 
     ventana.mainloop()
 
+
+def Solicitaranalisis():
+    global texto
+    if texto=="":
+        print("texto vacio")
+    else:
+        analizar(texto)
+
+
 def cargarArchivo():
+    global texto
     archivo=filedialog.askopenfile(
         title="Por favor seleccine un archivo",
         initialdir="./",
@@ -50,7 +64,6 @@ def cargarArchivo():
     else:
         texto=archivo.read()
         archivo.close()
-        analizar(texto)
 
 def isLetra(C):
     if((ord(C) >= 65 and ord(C) <= 90) or (ord(C) >= 97 and ord(C) <= 122) or ord(C) == 164 or ord(C) == 165):
