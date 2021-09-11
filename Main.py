@@ -65,6 +65,7 @@ def isNumero(C):
         return False
 
 def analizar(txt):
+    global Tokens,Errores
     fila=1
     columna=1
     estado=0
@@ -77,18 +78,25 @@ def analizar(txt):
                 LexemaActual+=c
                 estado=1
             else:
-                print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
+                Errores.append(Error(fila,columna,c))
+                error=True
                 LexemaActual=""
         elif estado==1:
             if isLetra(c):
                 LexemaActual+=c
                 estado=1
             elif ord(c)==61:#signo =
+                print(LexemaActual)
                 LexemaActual=""
                 estado=2
             else:
-                print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
-                LexemaActual=""
+                if ord(c)==32:
+                    pass
+                else:
+                    #print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
+                    Errores.append(Error(fila,columna,c))
+                    estado=0
+                    LexemaActual=""
         elif estado==2:
             if ord(c)==34:
                 estado=3
@@ -96,7 +104,9 @@ def analizar(txt):
                 if ord(c)==32:
                     pass
                 else:
-                    print("error")
+                    Errores.append(Error(fila,columna,c))
+                    estado=0
+                    LexemaActual=""
         
         elif estado==3:
             if isLetra(c):
@@ -122,7 +132,11 @@ def analizar(txt):
         elif estado==5:
             if ord(c)==59:
                 print("caracter",c)
-        
+                estado=0
+            else:
+                Errores.append(Error(fila,columna,c))
+                estado=0
+                LexemaActual=""
         
 
 
@@ -140,6 +154,9 @@ def analizar(txt):
             columna+=1
             continue
         columna+=1
+    
+    for e in Errores:
+        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
 
 
 def VerOriginal():
