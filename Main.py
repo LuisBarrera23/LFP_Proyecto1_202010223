@@ -84,40 +84,82 @@ def analizar(txt):
     estado=0
     error=False
     LexemaActual=""
+    actual=""
     for c in txt:
-        #print("Fila:",fila,"Columna:",columna,"caracter:",c)
         if estado==0 and ord(c)!=32:
             if isLetra(c):
                 LexemaActual+=c
                 estado=1
             else:
-                Errores.append(Error(fila,columna,c))
+                Errores.append(Error(fila,columna,c,"Se esperaba letra"))
                 error=True
                 LexemaActual=""
+                estado=0
         elif estado==1:
             if isLetra(c):
                 LexemaActual+=c
                 estado=1
             elif ord(c)==61:#signo =
-                print(LexemaActual)
+                #print(LexemaActual)
+                if LexemaActual=="TITULO":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="ANCHO":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="ALTO":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="FILAS":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="COLUMNAS":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="CELDAS":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                elif LexemaActual=="FILTROS":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    actual=LexemaActual
+                Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
                 estado=2
             else:
                 if ord(c)==32:
                     pass
                 else:
-                    #print("Error, se esperaba letra en Fila:",fila,"columna:",columna)
+                    if LexemaActual=="TITULO":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="ANCHO":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="ALTO":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="FILAS":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="COLUMNAS":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="CELDAS":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    elif LexemaActual=="FILTROS":
+                        Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
                     Errores.append(Error(fila,columna,c))
+                    error=True
                     estado=0
                     LexemaActual=""
         elif estado==2:
             if ord(c)==34:
+                Tokens.append(Token("Simbolo",c,fila,columna))
                 estado=3
+            elif isNumero(c):
+                LexemaActual+=c
+                estado=5
             else:
                 if ord(c)==32:
                     pass
                 else:
                     Errores.append(Error(fila,columna,c))
+                    error=True
                     estado=0
                     LexemaActual=""
         
@@ -130,24 +172,53 @@ def analizar(txt):
                 estado=4
             else:
                 if ord(c)==34:
-                    estado=5
+                    estado=30
+                    Tokens.append(Token("Simbolo",c,fila,columna))
+                    Errores.append(Error(fila,columna,c,"nombre vacio"))
+                    error=True
                     print("nombre vacio")
                 else:
                     LexemaActual+=c
                     estado=4
         elif estado==4:
             if ord(c)==34:
-                print(LexemaActual)
+                Tokens.append(Token("Cadena",LexemaActual,fila,columna-len(LexemaActual)))
+                Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
-                estado=5
+                estado=30
             else:
                 LexemaActual+=c
+        
         elif estado==5:
-            if ord(c)==59:
-                print("caracter",c)
+            if isNumero(c):
+                LexemaActual+=c
+                estado=5
+            elif isLetra(c):
+                Errores.append(Error(fila,columna,c,"se esperaba numero"))
+                error=True
+                estado=0
+            elif ord(c)==59:
+                Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                LexemaActual=""
                 estado=0
             else:
-                Errores.append(Error(fila,columna,c))
+                Errores.append(Error(fila,columna,c,"se esperaba numero"))
+                error=True
+                estado=0
+        
+        
+        
+        
+        
+        
+        elif estado==30:
+            if ord(c)==59:
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                estado=0
+            else:
+                Errores.append(Error(fila,columna,c,"se esperaba simbolo"))
+                error=True
                 estado=0
                 LexemaActual=""
         
@@ -168,8 +239,11 @@ def analizar(txt):
             continue
         columna+=1
     
-    for e in Errores:
-        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
+    # for e in Errores:
+    #     print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
+
+    for t in Tokens:
+        print(t.token,t.lexema,t.fila,t.columna)
 
 
 def VerOriginal():
