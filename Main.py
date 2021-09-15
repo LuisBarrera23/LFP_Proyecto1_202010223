@@ -187,7 +187,7 @@ def analizar(txt):
                 estado=4
             else:
                 if ord(c)==34:
-                    estado=30
+                    estado=21
                     Tokens.append(Token("Simbolo",c,fila,columna))
                     Errores.append(Error(fila,columna,c,"nombre vacio"))
                     error=True
@@ -200,7 +200,7 @@ def analizar(txt):
                 Tokens.append(Token("Cadena",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
-                estado=30
+                estado=21
             else:
                 LexemaActual+=c
         # logica los numeros--------------------------------------------------------------------
@@ -347,7 +347,7 @@ def analizar(txt):
             elif ord(c)==125:
                 LexemaActual=""
                 Tokens.append(Token("Simbolo",c,fila,columna))
-                estado=30#------------------------------------------------------------------------------
+                estado=21
             else:
                 LexemaActual=""
                 Errores.append(Error(fila,columna,c,"Caracter no valido"))
@@ -415,7 +415,7 @@ def analizar(txt):
         
         
         
-        elif estado==30:
+        elif estado==21:
             if ord(c)==59:
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 estado=0
