@@ -13,10 +13,11 @@ Tokens=[]
 Imagenes=[]
 texto=""
 ventana=Tk()
+combo=ttk.Combobox()
 canvas = Canvas()
 
 def generarVentana():
-    global ventana,canvas
+    global ventana,canvas,combo
     canvas = Canvas(ventana,width=940, height=580, bg='white')
     canvas.place(x=220,y=80)
     ventana.configure(background="#008080")
@@ -41,6 +42,9 @@ def generarVentana():
     b8=Button(ventana,text="Double Mirror",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=520,height=40,width=180)
     
 
+    combo=ttk.Combobox(ventana,state="readonly")
+    combo.place(x=20,y=200)
+    combo.configure(width=27)
     ventana.mainloop()
 
 
@@ -505,9 +509,19 @@ def analizar(txt):
     else:
         print("No hubo error")
         messagebox.showinfo(message="Se realizo el analisis con exito y sin errores",title="Aviso")
-        for i in Imagenes:
-            print(i.titulo)
-            i.mostrarCeldas()
+        modificarCombo()
+        # for i in Imagenes:
+        #     print(i.titulo)
+        #     i.mostrarCeldas()
+
+def modificarCombo():
+    global combo, Imagenes
+    
+    for i in Imagenes:
+        values = list(combo["values"])
+        combo["values"] = values + [i.titulo]
+    combo.set("Seleccione una imagen")
+    print(combo.get())
 
 def generarReporteHTML():
     global Tokens,Errores
