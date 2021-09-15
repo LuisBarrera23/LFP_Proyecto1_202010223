@@ -1,5 +1,6 @@
 from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
 import tkinter
+from os import startfile
 from Error import Error
 from Token import Token
 from Imagen import imagen
@@ -32,7 +33,7 @@ def generarVentana():
     ventana.iconbitmap('Complementos\Mario.ico')
     b1=Button(ventana,text="Cargar",command=cargarArchivo,font=("Verdana",10),borderwidth=3,background="beige").place(x=20,y=20,height=40,width=100)
     b2=Button(ventana,text="Analizar",command=Solicitaranalisis,font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
-    b3=Button(ventana,text="Reportes",font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
+    b3=Button(ventana,text="Reportes",command=generarReporteHTML,font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
     b4=Button(ventana,text="Salir",command=ventana.destroy,font=("Verdana",10),borderwidth=3,background="Red").place(x=320,y=20,height=40,width=100)
     b5=Button(ventana,text="Original",command=VerOriginal,font=("Verdana",10),borderwidth=3,background="#79FF00").place(x=20,y=400,height=40,width=180)
     b6=Button(ventana,text="Mirror X",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=440,height=40,width=180)
@@ -139,6 +140,10 @@ def analizar(txt):
                 elif LexemaActual=="FILTROS":
                     Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
                     actual=LexemaActual
+                else:
+                        Errores.append(Error(fila,columna-len(LexemaActual),LexemaActual,"Palabra reservada mal escrita"))
+                        LexemaActual=""
+                        error=True
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
                 estado=2
@@ -160,7 +165,11 @@ def analizar(txt):
                         Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
                     elif LexemaActual=="FILTROS":
                         Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
-                    Errores.append(Error(fila,columna,c))
+                    else:
+                        Errores.append(Error(fila,columna-len(LexemaActual),LexemaActual,"Palabra reservada mal escrita"))
+                        LexemaActual=""
+                        error=True
+                    Errores.append(Error(fila,columna,c,"Caracter no valido"))
                     error=True
                     estado=0
                     LexemaActual=""
@@ -226,13 +235,13 @@ def analizar(txt):
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 if error is False:
                     if actual=="ANCHO":
-                        ancho=str(LexemaActual)
+                        ancho=int(LexemaActual)
                     elif actual=="ALTO":
-                        alto=str(LexemaActual)
+                        alto=int(LexemaActual)
                     elif actual=="FILAS":
-                        filas=str(LexemaActual)
+                        filas=int(LexemaActual)
                     elif actual=="COLUMNAS":
-                        columnas=str(LexemaActual)
+                        columnas=int(LexemaActual)
                     
                 LexemaActual=""
                 estado=0
@@ -264,7 +273,7 @@ def analizar(txt):
                 estado=8
             elif ord(c)==44:
                 if error is False:
-                    x=str(LexemaActual)
+                    x=int(LexemaActual)
                 Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -289,7 +298,7 @@ def analizar(txt):
                 estado=10
             elif ord(c)==44:
                 if error is False:
-                    y=str(LexemaActual)
+                    y=int(LexemaActual)
                 Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -418,6 +427,11 @@ def analizar(txt):
                     error=True
                     estado=0
                 Tokens.append(Token("Simbolo",c,fila,columna))
+            else:
+                LexemaActual=""
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                estado=0
 
         #logica para separador----------------------------------------------------------------
         elif estado==18:
@@ -442,6 +456,7 @@ def analizar(txt):
             if ord(c)==64:
                 LexemaActual+=c
                 Tokens.append(Token("Separador",LexemaActual,fila,columna-len(LexemaActual)))
+                LexemaActual=""
                 estado=0
             else:
                 Errores.append(Error(fila,columna,c,"Se esperaba @"))
@@ -486,12 +501,116 @@ def analizar(txt):
     #    print(t.token,t.lexema,t.fila,t.columna)
     if error:
         print("Si hubo error")
+        messagebox.showinfo(message="Se reportaron errores en el analisis por favor vea los reportes",title="Aviso")
     else:
         print("No hubo error")
+        messagebox.showinfo(message="Se realizo el analisis con exito y sin errores",title="Aviso")
         for i in Imagenes:
             print(i.titulo)
             i.mostrarCeldas()
 
+def generarReporteHTML():
+    global Tokens,Errores
+    f=open("Reporte.html","w",encoding='UTF-8')
+    inicio="""
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+    <title>Reporte Proyecto 1</title>
+    </head>
+    <style>
+    .titulo{
+        text-align: center;
+        background-color: aqua;
+        padding: 8px;
+    }
+    .cuerpo{
+        background-color: white;
+    }
+    .contenido{
+        color: white;
+    }
+    .inscritos{
+        color:white;
+        background-color: teal;
+        padding: 8px;
+    }
+    .tabla{
+        width:80%; 
+        text-align: center; 
+        margin-right: auto; 
+        margin-left: auto;
+        padding: 15px;
+    }
+    h1,h2{
+        text-align:center;
+        padding:8px;
+    }
+    </style>
+    <body class="cuerpo">
+    <div class="titulo">
+    <h1>Reportes</h1></div>"""
+
+    inicio+="<div><h2>Tabla de Tokens</h2>"
+
+    inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
+    inicio+="""<thead><tr>
+    <th scope="col">No.</th>
+    <th scope="col">TOKEN</th>
+    <th scope="col">LEXEMA</th>
+    <th scope="col">FILA</th>
+    <th scope="col">COLUMNA</th>
+    </tr></thead><tbody>"""
+            
+    for i in range(len(Tokens)):
+        inicio+="<tr>"
+        inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
+        inicio+="<td>"+Tokens[i].token+"</td>"
+        inicio+="<td>"+Tokens[i].lexema+"</td>"
+        inicio+="<td>"+str(Tokens[i].fila)+"</td>"
+        inicio+="<td>"+str(Tokens[i].columna)+"</td>"
+        inicio+="</tr>"
+            
+    inicio+="</tbody></table></div></div>"
+    #------------------------------------------------------------------------------------------------
+    inicio+="<div><h2>Tabla de Errores</h2>"
+
+    inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
+    inicio+="""<thead><tr>
+    <th scope="col">No.</th>
+    <th scope="col">FILA</th>
+    <th scope="col">COLUMNA</th>
+    <th scope="col">CARACTER</th>
+    <th scope="col">OBSERVACION</th>
+    </tr></thead><tbody>"""
+            
+    for i in range(len(Errores)):
+        inicio+="<tr>"
+        inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
+        inicio+="<td>"+str(Errores[i].fila)+"</td>"
+        inicio+="<td>"+str(Errores[i].columna)+"</td>"
+        inicio+="<td>"+Errores[i].caracter+"</td>"
+        inicio+="<td>"+Errores[i].observacion+"</td>"
+        inicio+="</tr>"
+            
+    inicio+="</tbody></table></div></div>"
+
+
+
+
+    fin="""
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+    </body>
+    </html>"""
+    f.write(inicio+fin)
+    f.close()
+    startfile("Reporte.html")
 
 def VerOriginal():
     global ventana,canvas
