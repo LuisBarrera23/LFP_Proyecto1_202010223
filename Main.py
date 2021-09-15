@@ -96,6 +96,9 @@ def analizar(txt):
             if isLetra(c):
                 LexemaActual+=c
                 estado=1
+            elif ord(c)==64:
+                LexemaActual+=c
+                estado=18
             else:
                 Errores.append(Error(fila,columna,c,"Se esperaba letra"))
                 error=True
@@ -154,16 +157,16 @@ def analizar(txt):
                     estado=0
                     LexemaActual=""
         elif estado==2:
-            if ord(c)==34:
+            if ord(c)==34: #comillas dobles
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 estado=3
-            elif isNumero(c):
+            elif isNumero(c): #numero
                 LexemaActual+=c
                 estado=5
             elif ord(c)==123: #llave
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 estado=6
-            elif isLetra(c):
+            elif isLetra(c): #letra
                 LexemaActual+=c
                 estado=17
             else:
@@ -296,6 +299,7 @@ def analizar(txt):
                     estado=13
                 else:
                     Errores.append(Error(fila,columna-len(LexemaActual),c,"Palabra reservada mal escrita"))
+                    LexemaActual=""
                     error=True
                     estado=6
                 Tokens.append(Token("Simbolo",c,fila,columna))
@@ -350,8 +354,63 @@ def analizar(txt):
                 error=True
                 estado=0
             
-            # logica de los filtros
+        # logica de los filtros---------------------------------------------------------------------------
+        elif estado==17:
+            if isLetra(c):
+                LexemaActual+=c
+                estado=17
+            elif ord(c)==44:
+                if LexemaActual=="MIRRORX" or LexemaActual=="MIRRORY" or LexemaActual=="DOUBLEMIRROR":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    LexemaActual=""
+                    estado=17
+                else:
+                    Errores.append(Error(fila,columna-len(LexemaActual),c,"Palabra reservada mal escrita"))
+                    LexemaActual=""
+                    error=True
+                    estado=0
+                Tokens.append(Token("Simbolo",c,fila,columna))
+            elif ord(c)==59:
+                if LexemaActual=="MIRRORX" or LexemaActual=="MIRRORY" or LexemaActual=="DOUBLEMIRROR":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    LexemaActual=""
+                    estado=0
+                else:
+                    Errores.append(Error(fila,columna-len(LexemaActual),c,"Palabra reservada mal escrita"))
+                    LexemaActual=""
+                    error=True
+                    estado=0
+                Tokens.append(Token("Simbolo",c,fila,columna))
 
+        #logica para separador----------------------------------------------------------------
+        elif estado==18:
+            if ord(c)==64:
+                LexemaActual+=c
+                estado=19
+            else:
+                Errores.append(Error(fila,columna,c,"Se esperaba @"))
+                LexemaActual=""
+                error=True
+                estado=0
+        elif estado==19:
+            if ord(c)==64:
+                LexemaActual+=c
+                estado=20
+            else:
+                Errores.append(Error(fila,columna,c,"Se esperaba @"))
+                LexemaActual=""
+                error=True
+                estado=0
+        elif estado==20:
+            if ord(c)==64:
+                LexemaActual+=c
+                Tokens.append(Token("Separador",LexemaActual,fila,columna-len(LexemaActual)))
+                estado=0
+            else:
+                Errores.append(Error(fila,columna,c,"Se esperaba @"))
+                LexemaActual=""
+                error=True
+                estado=0
 
         
         
@@ -384,10 +443,14 @@ def analizar(txt):
         columna+=1
     
     for e in Errores:
-        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
+        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter,e.observacion)
 
     #for t in Tokens:
     #    print(t.token,t.lexema,t.fila,t.columna)
+    if error:
+        print("Si hubo error")
+    else:
+        print("No hubo error")
 
 
 def VerOriginal():
