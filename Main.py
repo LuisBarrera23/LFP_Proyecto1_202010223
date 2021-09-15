@@ -2,11 +2,14 @@ from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
 import tkinter
 from Error import Error
 from Token import Token
+from Imagen import imagen
+from Celda import celda
 
 
 #Variables globales
 Errores=[]
 Tokens=[]
+Imagenes=[]
 texto=""
 ventana=Tk()
 canvas = Canvas()
@@ -84,13 +87,18 @@ def isEspacio(C):
         return False
 
 def analizar(txt):
-    global Tokens,Errores
+    global Tokens,Errores,Imagenes
+    Errores=[]
+    Tokens=[]
+    Imagenes=[]
     fila=1
     columna=1
     estado=0
     error=False
     LexemaActual=""
     actual=""
+    celdas=[]
+    filtros=[]
     for c in txt:
         if estado==0 and not isEspacio(c):
             if isLetra(c):
@@ -197,6 +205,7 @@ def analizar(txt):
                     estado=4
         elif estado==4:
             if ord(c)==34:
+                titulo=LexemaActual
                 Tokens.append(Token("Cadena",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -215,6 +224,16 @@ def analizar(txt):
             elif ord(c)==59:
                 Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
+                if error is False:
+                    if actual=="ANCHO":
+                        ancho=str(LexemaActual)
+                    elif actual=="ALTO":
+                        alto=str(LexemaActual)
+                    elif actual=="FILAS":
+                        filas=str(LexemaActual)
+                    elif actual=="COLUMNAS":
+                        columnas=str(LexemaActual)
+                    
                 LexemaActual=""
                 estado=0
             else:
@@ -244,6 +263,8 @@ def analizar(txt):
                 LexemaActual+=c
                 estado=8
             elif ord(c)==44:
+                if error is False:
+                    x=str(LexemaActual)
                 Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -267,6 +288,8 @@ def analizar(txt):
                 LexemaActual+=c
                 estado=10
             elif ord(c)==44:
+                if error is False:
+                    y=str(LexemaActual)
                 Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -290,10 +313,14 @@ def analizar(txt):
                 estado=12
             elif ord(c)==44:
                 if LexemaActual=="TRUE":
+                    if error is False:
+                        pintado=LexemaActual
                     Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
                     LexemaActual=""
                     estado=13
                 elif LexemaActual=="FALSE":
+                    if error is False:
+                        pintado=LexemaActual
                     Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
                     LexemaActual=""
                     estado=13
@@ -330,6 +357,9 @@ def analizar(txt):
                 LexemaActual+=c
                 estado=15
             elif ord(c)==93:# cerra corchete
+                if error is False:
+                    color=LexemaActual
+                    celdas.append(celda(x,y,pintado,color))
                 Tokens.append(Token("Color",LexemaActual,fila,columna-len(LexemaActual)))
                 Tokens.append(Token("Simbolo",c,fila,columna))
                 LexemaActual=""
@@ -362,6 +392,8 @@ def analizar(txt):
             elif ord(c)==44:
                 if LexemaActual=="MIRRORX" or LexemaActual=="MIRRORY" or LexemaActual=="DOUBLEMIRROR":
                     Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    if error is False:
+                        filtros.append(LexemaActual)
                     LexemaActual=""
                     estado=17
                 else:
@@ -373,6 +405,11 @@ def analizar(txt):
             elif ord(c)==59:
                 if LexemaActual=="MIRRORX" or LexemaActual=="MIRRORY" or LexemaActual=="DOUBLEMIRROR":
                     Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    if error is False:
+                        filtros.append(LexemaActual)
+                        Imagenes.append(imagen(titulo,ancho,alto,filas,columnas,celdas,filtros))
+                        celdas=[]
+                        filtros=[]
                     LexemaActual=""
                     estado=0
                 else:
@@ -451,6 +488,9 @@ def analizar(txt):
         print("Si hubo error")
     else:
         print("No hubo error")
+        for i in Imagenes:
+            print(i.titulo)
+            i.mostrarCeldas()
 
 
 def VerOriginal():

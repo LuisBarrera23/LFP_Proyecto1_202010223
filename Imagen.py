@@ -1,6 +1,4 @@
-from _typeshed import Self
-
-
+from Celda import celda
 class imagen:
     def __init__(self,titulo,ancho,alto,filas,columnas,celdas,filtros):
         self.titulo=titulo
@@ -14,3 +12,5 @@ class imagen:
     def mostrarCeldas(self):
         for cel in self.celdas:
             print(cel.x,cel.y,cel.pintado,cel.color)
+        for f in self.filtros:
+            print(f)
