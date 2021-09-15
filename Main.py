@@ -54,7 +54,7 @@ def cargarArchivo():
         title="Por favor seleccine un archivo",
         initialdir="./",
         filetypes=(
-            ("Todos los archivos","*.*"),("Archivo PXLA","*.PXLA")
+            ("Todos los archivos","*.*"),("Archivo PXLA","*.pxla")
         )
     )
 
@@ -77,6 +77,12 @@ def isNumero(C):
     else:
         return False
 
+def isEspacio(C):
+    if (ord(C)==32 or ord(C)==9 or ord(C)==10):
+        return True
+    else:
+        return False
+
 def analizar(txt):
     global Tokens,Errores
     fila=1
@@ -86,7 +92,7 @@ def analizar(txt):
     LexemaActual=""
     actual=""
     for c in txt:
-        if estado==0 and ord(c)!=32:
+        if estado==0 and not isEspacio(c):
             if isLetra(c):
                 LexemaActual+=c
                 estado=1
@@ -154,11 +160,17 @@ def analizar(txt):
             elif isNumero(c):
                 LexemaActual+=c
                 estado=5
+            elif ord(c)==123: #llave
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                estado=6
+            elif isLetra(c):
+                LexemaActual+=c
+                estado=17
             else:
                 if ord(c)==32:
                     pass
                 else:
-                    Errores.append(Error(fila,columna,c))
+                    Errores.append(Error(fila,columna,c,"caracter no valido"))
                     error=True
                     estado=0
                     LexemaActual=""
@@ -188,7 +200,7 @@ def analizar(txt):
                 estado=30
             else:
                 LexemaActual+=c
-        
+        # logica los numeros--------------------------------------------------------------------
         elif estado==5:
             if isNumero(c):
                 LexemaActual+=c
@@ -206,9 +218,141 @@ def analizar(txt):
                 Errores.append(Error(fila,columna,c,"se esperaba numero"))
                 error=True
                 estado=0
-        
-        
-        
+        #logica de celdas --------------------------------------------------------------------------
+        elif estado==6 and not isEspacio(c):
+            if ord(c)==91: #corchete
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                estado=7
+            else: 
+                Errores.append(Error(fila,columna,c,"se esperaba corchete"))
+                error=True
+
+        elif estado==7 and not isEspacio(c):
+            if isNumero(c):
+                LexemaActual+=c
+                estado=8
+            else:
+                Errores.append(Error(fila,columna,c,"se esperaba numero"))
+                error=True
+                LexemaActual=""
+                estado=6
+        elif estado==8:
+            if isNumero(c):
+                LexemaActual+=c
+                estado=8
+            elif ord(c)==44:
+                Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                LexemaActual=""
+                estado=9
+            else:
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                LexemaActual=""
+                estado=6
+        elif estado==9 and not isEspacio(c):
+            if isNumero(c):
+                LexemaActual+=c
+                estado=10
+            else:
+                Errores.append(Error(fila,columna,c,"se esperaba numero"))
+                error=True
+                LexemaActual=""
+                estado=6 
+        elif estado==10:
+            if isNumero(c):
+                LexemaActual+=c
+                estado=10
+            elif ord(c)==44:
+                Tokens.append(Token("Numero",LexemaActual,fila,columna-len(LexemaActual)))
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                LexemaActual=""
+                estado=11
+            else:
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                LexemaActual=""
+                estado=6
+        elif estado==11 and not isEspacio(c):
+            if isLetra(c):
+                LexemaActual+=c
+                estado=12
+            else:
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                estado=6
+        elif estado==12:
+            if isLetra(c):
+                LexemaActual+=c
+                estado=12
+            elif ord(c)==44:
+                if LexemaActual=="TRUE":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    LexemaActual=""
+                    estado=13
+                elif LexemaActual=="FALSE":
+                    Tokens.append(Token("Reservada",LexemaActual,fila,columna-len(LexemaActual)))
+                    LexemaActual=""
+                    estado=13
+                else:
+                    Errores.append(Error(fila,columna-len(LexemaActual),c,"Palabra reservada mal escrita"))
+                    error=True
+                    estado=6
+                Tokens.append(Token("Simbolo",c,fila,columna))
+            else:
+                Errores.append(Error(fila,columna,c,"caracter no valido"))
+                error=True
+                estado=6
+                
+        elif estado==13 and not isEspacio(c):
+            if ord(c)==35:
+                LexemaActual+=c
+                estado=14
+            else:
+                Errores.append(Error(fila,columna,c,"Se esperaba #"))
+                error=True
+                estado=6
+        elif estado==14:
+            if isLetra(c) or isNumero(c):
+                LexemaActual+=c
+                estado=15
+            else:
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                LexemaActual=""
+                estado=6
+        elif estado==15:
+            if isLetra(c) or isNumero(c):
+                LexemaActual+=c
+                estado=15
+            elif ord(c)==93:# cerra corchete
+                Tokens.append(Token("Color",LexemaActual,fila,columna-len(LexemaActual)))
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                LexemaActual=""
+                estado=16
+            else:
+                LexemaActual=""
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                estado=6
+        elif estado==16 and not isEspacio(c):
+            if ord(c)==44:
+                LexemaActual=""
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                estado=6
+            elif ord(c)==125:
+                LexemaActual=""
+                Tokens.append(Token("Simbolo",c,fila,columna))
+                estado=30#------------------------------------------------------------------------------
+            else:
+                LexemaActual=""
+                Errores.append(Error(fila,columna,c,"Caracter no valido"))
+                error=True
+                estado=0
+            
+            # logica de los filtros
+
+
         
         
         
@@ -239,11 +383,11 @@ def analizar(txt):
             continue
         columna+=1
     
-    # for e in Errores:
-    #     print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
+    for e in Errores:
+        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter)
 
-    for t in Tokens:
-        print(t.token,t.lexema,t.fila,t.columna)
+    #for t in Tokens:
+    #    print(t.token,t.lexema,t.fila,t.columna)
 
 
 def VerOriginal():
