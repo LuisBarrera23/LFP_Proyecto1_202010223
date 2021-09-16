@@ -14,3 +14,10 @@ class imagen:
             print(cel.x,cel.y,cel.pintado,cel.color)
         for f in self.filtros:
             print(f)
+
+    def buscar(self,i,j):
+        for cel in self.celdas:
+            if cel.x==i and cel.y==j and cel.pintado:
+                return cel.color
+        return ""
+            

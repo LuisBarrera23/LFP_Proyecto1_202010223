@@ -40,6 +40,7 @@ def generarVentana():
     b6=Button(ventana,text="Mirror X",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=440,height=40,width=180)
     b7=Button(ventana,text="Mirror Y",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=480,height=40,width=180)
     b8=Button(ventana,text="Double Mirror",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=520,height=40,width=180)
+    b9=Button(ventana,text="Ver imagen",command=verImagen,font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=60,y=230,height=30,width=100)
     
 
     combo=ttk.Combobox(ventana,state="readonly")
@@ -516,6 +517,7 @@ def analizar(txt):
 
 def modificarCombo():
     global combo, Imagenes
+    combo["values"]=[]
     
     for i in Imagenes:
         values = list(combo["values"])
@@ -625,6 +627,31 @@ def generarReporteHTML():
     f.write(inicio+fin)
     f.close()
     startfile("Reporte.html")
+
+def generarImagenHTML(imagen):
+    imagen.mostrarCeldas()
+    for j in range(imagen.filas):
+        for i in range(imagen.columnas):
+            print(i,j)
+            color=imagen.buscar(i,j)
+            if color=="":
+                pass
+            else:
+                print(color)
+
+
+def verImagen():
+    global combo,Imagenes
+    nombre=combo.get()
+    if nombre=="" or nombre=="Seleccione una imagen":
+        print("actualmente vacio")
+    else:
+        for i in Imagenes:
+            if nombre==i.titulo:
+                print(nombre)
+                generarImagenHTML(i)
+        
+    
 
 def VerOriginal():
     global ventana,canvas
