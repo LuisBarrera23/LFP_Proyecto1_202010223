@@ -629,15 +629,38 @@ def generarReporteHTML():
     startfile("Reporte.html")
 
 def generarImagenHTML(imagen):
-    imagen.mostrarCeldas()
+    inicio="""<!doctype html>
+        <html lang="en">
+        <head>
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <style>
+        table, td, th {
+            border: 1px solid black;
+        }
+
+        table {
+        border-collapse: collapse;
+        }
+        </style>
+        </head>
+        <body>
+    """
+    contenido=""
+    contenido+=f"<table border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
     for j in range(imagen.filas):
+        contenido+="<tr>\n"
         for i in range(imagen.columnas):
-            print(i,j)
             color=imagen.buscar(i,j)
             if color=="":
-                pass
+                contenido+="<td></td>\n"
             else:
-                print(color)
+                contenido+=f"<td style=\"background-color:{color}\"></td>\n"
+        contenido+="</tr>\n"
+    contenido+="</table>\n</body>\n</html>"
+    documento=open("prueba.html","w",encoding="utf8")
+    documento.write(inicio+contenido)
+    documento.close()
 
 
 def verImagen():
