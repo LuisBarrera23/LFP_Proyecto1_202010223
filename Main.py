@@ -1,5 +1,8 @@
-from tkinter import Button, Image, Tk,ttk,Canvas,filedialog,messagebox
+from tkinter import Button, Image,Canvas, Tk,ttk,filedialog,messagebox,Label
 import tkinter
+from tkinter.constants import CENTER, TRUE
+import imgkit
+from PIL import Image,ImageOps,ImageTk
 from os import startfile
 from Error import Error
 from Token import Token
@@ -13,13 +16,20 @@ Tokens=[]
 Imagenes=[]
 texto=""
 ventana=Tk()
+label=Label()
 combo=ttk.Combobox()
-canvas = Canvas()
+mirrorx=False
+mirrory=False
+doublemirror=False
+nombre=""
+seleccionado=False
+analizado=False
+Fil=[]
 
 def generarVentana():
-    global ventana,canvas,combo
-    canvas = Canvas(ventana,width=940, height=580, bg='white')
-    canvas.place(x=220,y=80)
+    global ventana,canvas,combo,label
+    label=Label(ventana, width=135, height=40)
+    label.place(x=220,y=80)
     ventana.configure(background="#008080")
     ancho=1200
     alto=700
@@ -36,10 +46,10 @@ def generarVentana():
     b2=Button(ventana,text="Analizar",command=Solicitaranalisis,font=("Verdana",10),borderwidth=3,background="beige").place(x=120,y=20,height=40,width=100)
     b3=Button(ventana,text="Reportes",command=generarReporteHTML,font=("Verdana",10),borderwidth=3,background="beige").place(x=220,y=20,height=40,width=100)
     b4=Button(ventana,text="Salir",command=ventana.destroy,font=("Verdana",10),borderwidth=3,background="Red").place(x=320,y=20,height=40,width=100)
-    b5=Button(ventana,text="Original",command=VerOriginal,font=("Verdana",10),borderwidth=3,background="#79FF00").place(x=20,y=400,height=40,width=180)
-    b6=Button(ventana,text="Mirror X",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=440,height=40,width=180)
-    b7=Button(ventana,text="Mirror Y",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=480,height=40,width=180)
-    b8=Button(ventana,text="Double Mirror",font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=520,height=40,width=180)
+    b5=Button(ventana,text="Original",command=verOriginal,font=("Verdana",10),borderwidth=3,background="#79FF00").place(x=20,y=400,height=40,width=180)
+    b6=Button(ventana,text="Mirror X",command=verMirrorX,font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=440,height=40,width=180)
+    b7=Button(ventana,text="Mirror Y",command=verMirrorY,font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=480,height=40,width=180)
+    b8=Button(ventana,text="Double Mirror",command=verDoubleMirror,font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=20,y=520,height=40,width=180)
     b9=Button(ventana,text="Ver imagen",command=verImagen,font=("Verdana",10),borderwidth=3,background="#FF8700").place(x=60,y=230,height=30,width=100)
     
 
@@ -50,11 +60,14 @@ def generarVentana():
 
 
 def Solicitaranalisis():
-    global texto
+    global texto,analizado
     if texto=="":
         print("texto vacio")
+        messagebox.showerror(message="No hay archivo por analizar, Por favor primero cargue un archivo",title="Error")
+        analizado=False
     else:
         analizar(texto)
+        analizado=True
 
 
 def cargarArchivo():
@@ -69,6 +82,7 @@ def cargarArchivo():
 
     if archivo is None:
         messagebox.showerror(message="No selecciono ningun archivo, por favor vuelva a intentarlo",title="Error")
+        texto=""
         print("No selecciono ningun archivo, por favor vuelva a intentarlo")
     else:
         texto=archivo.read()
@@ -499,8 +513,8 @@ def analizar(txt):
             continue
         columna+=1
     
-    for e in Errores:
-        print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter,e.observacion)
+    # for e in Errores:
+    #     print("fila:",e.fila,"columna",e.columna,"caracter:",e.caracter,e.observacion)
 
     #for t in Tokens:
     #    print(t.token,t.lexema,t.fila,t.columna)
@@ -510,126 +524,121 @@ def analizar(txt):
     else:
         print("No hubo error")
         messagebox.showinfo(message="Se realizo el analisis con exito y sin errores",title="Aviso")
-        modificarCombo()
-        # for i in Imagenes:
-        #     print(i.titulo)
-        #     i.mostrarCeldas()
+        generarImagenHTML()
+        reset()
 
-def modificarCombo():
-    global combo, Imagenes
-    combo["values"]=[]
-    
-    for i in Imagenes:
-        values = list(combo["values"])
-        combo["values"] = values + [i.titulo]
-    combo.set("Seleccione una imagen")
-    print(combo.get())
 
+#Generacion de HTML-----------------------------------------------------------
 def generarReporteHTML():
-    global Tokens,Errores
-    f=open("Reporte.html","w",encoding='UTF-8')
-    inicio="""
-    <!doctype html>
-    <html lang="en">
-    <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    global Tokens,Errores,analizado
+    if analizado:
+        f=open("Reporte.html","w",encoding='UTF-8')
+        inicio="""
+        <!doctype html>
+        <html lang="en">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
 
-    <title>Reporte Proyecto 1</title>
-    </head>
-    <style>
-    .titulo{
-        text-align: center;
-        background-color: aqua;
-        padding: 8px;
-    }
-    .cuerpo{
-        background-color: white;
-    }
-    .contenido{
-        color: white;
-    }
-    .inscritos{
-        color:white;
-        background-color: teal;
-        padding: 8px;
-    }
-    .tabla{
-        width:80%; 
-        text-align: center; 
-        margin-right: auto; 
-        margin-left: auto;
-        padding: 15px;
-    }
-    h1,h2{
-        text-align:center;
-        padding:8px;
-    }
-    </style>
-    <body class="cuerpo">
-    <div class="titulo">
-    <h1>Reportes</h1></div>"""
+        <title>Reporte Proyecto 1</title>
+        </head>
+        <style>
+        .titulo{
+            text-align: center;
+            background-color: aqua;
+            padding: 8px;
+        }
+        .cuerpo{
+            background-color: white;
+        }
+        .contenido{
+            color: white;
+        }
+        .inscritos{
+            color:white;
+            background-color: teal;
+            padding: 8px;
+        }
+        .tabla{
+            width:80%; 
+            text-align: center; 
+            margin-right: auto; 
+            margin-left: auto;
+            padding: 15px;
+        }
+        h1,h2{
+            text-align:center;
+            padding:8px;
+        }
+        </style>
+        <body class="cuerpo">
+        <div class="titulo">
+        <h1>Reportes</h1></div>"""
 
-    inicio+="<div><h2>Tabla de Tokens</h2>"
+        inicio+="<div><h2>Tabla de Tokens</h2>"
 
-    inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
-    inicio+="""<thead><tr>
-    <th scope="col">No.</th>
-    <th scope="col">TOKEN</th>
-    <th scope="col">LEXEMA</th>
-    <th scope="col">FILA</th>
-    <th scope="col">COLUMNA</th>
-    </tr></thead><tbody>"""
-            
-    for i in range(len(Tokens)):
-        inicio+="<tr>"
-        inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
-        inicio+="<td>"+Tokens[i].token+"</td>"
-        inicio+="<td>"+Tokens[i].lexema+"</td>"
-        inicio+="<td>"+str(Tokens[i].fila)+"</td>"
-        inicio+="<td>"+str(Tokens[i].columna)+"</td>"
-        inicio+="</tr>"
-            
-    inicio+="</tbody></table></div></div>"
-    #------------------------------------------------------------------------------------------------
-    inicio+="<div><h2>Tabla de Errores</h2>"
+        inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
+        inicio+="""<thead><tr>
+        <th scope="col">No.</th>
+        <th scope="col">TOKEN</th>
+        <th scope="col">LEXEMA</th>
+        <th scope="col">FILA</th>
+        <th scope="col">COLUMNA</th>
+        </tr></thead><tbody>"""
+                
+        for i in range(len(Tokens)):
+            inicio+="<tr>"
+            inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
+            inicio+="<td>"+Tokens[i].token+"</td>"
+            inicio+="<td>"+Tokens[i].lexema+"</td>"
+            inicio+="<td>"+str(Tokens[i].fila)+"</td>"
+            inicio+="<td>"+str(Tokens[i].columna)+"</td>"
+            inicio+="</tr>"
+                
+        inicio+="</tbody></table></div></div>"
+        #------------------------------------------------------------------------------------------------
+        inicio+="<div><h2>Tabla de Errores</h2>"
 
-    inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
-    inicio+="""<thead><tr>
-    <th scope="col">No.</th>
-    <th scope="col">FILA</th>
-    <th scope="col">COLUMNA</th>
-    <th scope="col">CARACTER</th>
-    <th scope="col">OBSERVACION</th>
-    </tr></thead><tbody>"""
-            
-    for i in range(len(Errores)):
-        inicio+="<tr>"
-        inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
-        inicio+="<td>"+str(Errores[i].fila)+"</td>"
-        inicio+="<td>"+str(Errores[i].columna)+"</td>"
-        inicio+="<td>"+Errores[i].caracter+"</td>"
-        inicio+="<td>"+Errores[i].observacion+"</td>"
-        inicio+="</tr>"
-            
-    inicio+="</tbody></table></div></div>"
-
-
+        inicio+="<div class=\"tabla\"><table class=\"table table-dark table-hover\">"
+        inicio+="""<thead><tr>
+        <th scope="col">No.</th>
+        <th scope="col">FILA</th>
+        <th scope="col">COLUMNA</th>
+        <th scope="col">CARACTER</th>
+        <th scope="col">OBSERVACION</th>
+        </tr></thead><tbody>"""
+                
+        for i in range(len(Errores)):
+            inicio+="<tr>"
+            inicio+="<th scope=\"row\">"+str(i+1)+"</th>"
+            inicio+="<td>"+str(Errores[i].fila)+"</td>"
+            inicio+="<td>"+str(Errores[i].columna)+"</td>"
+            inicio+="<td>"+Errores[i].caracter+"</td>"
+            inicio+="<td>"+Errores[i].observacion+"</td>"
+            inicio+="</tr>"
+                
+        inicio+="</tbody></table></div></div>"
 
 
-    fin="""
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
-    </body>
-    </html>"""
-    f.write(inicio+fin)
-    f.close()
-    startfile("Reporte.html")
 
-def generarImagenHTML(imagen):
-    inicio="""<!doctype html>
+
+        fin="""
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+        </body>
+        </html>"""
+        f.write(inicio+fin)
+        f.close()
+        startfile("Reporte.html")
+    else:
+        messagebox.showerror(message="No se ha analizado ningun archivo",title="Error")
+
+def generarImagenHTML():
+    global Imagenes
+    for imagen in Imagenes:
+        inicio="""<!doctype html>
         <html lang="en">
         <head>
         <!-- Bootstrap CSS -->
@@ -645,46 +654,267 @@ def generarImagenHTML(imagen):
         </style>
         </head>
         <body>
-    """
-    contenido=""
-    contenido+=f"<table border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
-    for j in range(imagen.filas):
-        contenido+="<tr>\n"
-        for i in range(imagen.columnas):
-            color=imagen.buscar(i,j)
-            if color=="":
-                contenido+="<td></td>\n"
-            else:
-                contenido+=f"<td style=\"background-color:{color}\"></td>\n"
-        contenido+="</tr>\n"
-    contenido+="</table>\n</body>\n</html>"
-    documento=open("prueba.html","w",encoding="utf8")
-    documento.write(inicio+contenido)
-    documento.close()
+        """
+        contenido=""
+        contenido+=f"<table border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
+        for j in range(imagen.filas):
+            contenido+="<tr>\n"
+            for i in range(imagen.columnas):
+                color=imagen.buscar(i,j)
+                if color=="":
+                    contenido+="<td></td>\n"
+                else:
+                    contenido+=f"<td style=\"background-color:{color}\"></td>\n"
+            contenido+="</tr>\n"
+        contenido+="</table>\n</body>\n</html>"
+        documento=open(f"Imagenes\HTML\{imagen.titulo}_ORIGINAL.html","w",encoding="utf8")
+        documento.write(inicio+contenido)
+        documento.close()
+        path_wkthmltoimage = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe'
+        config = imgkit.config(wkhtmltoimage=path_wkthmltoimage)
+        options = {
+        'format': 'jpg',
+        'crop-h': str(imagen.ancho),
+        'crop-w': str(imagen.alto),
+        'crop-x': '0',
+        'crop-y': '0',
+        'encoding': "UTF-8"
+        }  
+        imgkit.from_file(f"Imagenes\HTML\{imagen.titulo}_ORIGINAL.html", f"Imagenes\{imagen.titulo}_ORIGINAL.jpg",config=config,options=options)
+        
+        for f in imagen.filtros:
+            if f=="MIRRORX":
+                inicio="""<!doctype html>
+                <html lang="en">
+                <head>
+                <!-- Bootstrap CSS -->
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+                <style>
+                table, td, th {
+                    border: 1px solid black;
+                }
 
+                table {
+                border-collapse: collapse;
+                }
+                </style>
+                </head>
+                <body>
+                """
+                contenido=""
+                contenido+=f"<table style=\"transform: scaleX(-1);\" border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
+                for j in range(imagen.filas):
+                    contenido+="<tr>\n"
+                    for i in range(imagen.columnas):
+                        color=imagen.buscar(i,j)
+                        if color=="":
+                            contenido+="<td></td>\n"
+                        else:
+                            contenido+=f"<td style=\"background-color:{color}\"></td>\n"
+                    contenido+="</tr>\n"
+                contenido+="</table>\n</body>\n</html>"
+                documento=open(f"Imagenes\HTML\{imagen.titulo}_MIRRORX.html","w",encoding="utf8")
+                documento.write(inicio+contenido)
+                documento.close()
+                img=Image.open(f"Imagenes\{imagen.titulo}_ORIGINAL.jpg")
+                img_mirrorx=ImageOps.mirror(img)
+                img_mirrorx.save(f"Imagenes\{imagen.titulo}_MIRRORX.jpg", quality=100)
+            if f=="MIRRORY":
+                inicio="""<!doctype html>
+                <html lang="en">
+                <head>
+                <!-- Bootstrap CSS -->
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+                <style>
+                table, td, th {
+                    border: 1px solid black;
+                }
 
+                table {
+                border-collapse: collapse;
+                }
+                </style>
+                </head>
+                <body>
+                """
+                contenido=""
+                contenido+=f"<table style=\"transform: scaleY(-1);\" border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
+                for j in range(imagen.filas):
+                    contenido+="<tr>\n"
+                    for i in range(imagen.columnas):
+                        color=imagen.buscar(i,j)
+                        if color=="":
+                            contenido+="<td></td>\n"
+                        else:
+                            contenido+=f"<td style=\"background-color:{color}\"></td>\n"
+                    contenido+="</tr>\n"
+                contenido+="</table>\n</body>\n</html>"
+                documento=open(f"Imagenes\HTML\{imagen.titulo}_MIRRORY.html","w",encoding="utf8")
+                documento.write(inicio+contenido)
+                documento.close()
+                img=Image.open(f"Imagenes\{imagen.titulo}_ORIGINAL.jpg")
+                img_mirrory=ImageOps.flip(img)
+                img_mirrory.save(f"Imagenes\{imagen.titulo}_MIRRORY.jpg", quality=100)
+            if f=="DOUBLEMIRROR":
+                inicio="""<!doctype html>
+                <html lang="en">
+                <head>
+                <!-- Bootstrap CSS -->
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+                <style>
+                table, td, th {
+                    border: 1px solid black;
+                }
+
+                table {
+                border-collapse: collapse;
+                }
+                </style>
+                </head>
+                <body>
+                """
+                contenido=""
+                contenido+=f"<table style=\"transform: scale(-1);\" border=\"1\" width=\"{str(imagen.ancho)}\" height=\"{str(imagen.alto)}\">"
+                for j in range(imagen.filas):
+                    contenido+="<tr>\n"
+                    for i in range(imagen.columnas):
+                        color=imagen.buscar(i,j)
+                        if color=="":
+                            contenido+="<td></td>\n"
+                        else:
+                            contenido+=f"<td style=\"background-color:{color}\"></td>\n"
+                    contenido+="</tr>\n"
+                contenido+="</table>\n</body>\n</html>"
+                documento=open(f"Imagenes\HTML\{imagen.titulo}_DOUBLEMIRROR.html","w",encoding="utf8")
+                documento.write(inicio+contenido)
+                documento.close()
+                img=Image.open(f"Imagenes\{imagen.titulo}_ORIGINAL.jpg")
+                img_mirrory=ImageOps.flip(img)
+                img_doublemirror=ImageOps.mirror(img_mirrory)
+                img_doublemirror.save(f"Imagenes\{imagen.titulo}_DOUBLEMIRROR.jpg", quality=100)
+            
+
+#Visualizacion de imagenes----------------------------------------------------
 def verImagen():
-    global combo,Imagenes
+    global combo,ventana,Imagenes,mirrorx,mirrory,doublemirror,Fil,label,seleccionado,nombre
     nombre=combo.get()
+    mirrorx=False
+    mirrory=False
+    doublemirror=False
     if nombre=="" or nombre=="Seleccione una imagen":
-        print("actualmente vacio")
+        messagebox.showinfo(message="No ha seleccionado ninguna imagen",title="Aviso")
     else:
         for i in Imagenes:
             if nombre==i.titulo:
                 print(nombre)
-                generarImagenHTML(i)
-        
-    
+                Fil=i.filtros
+                objeto=i
+                break
+        img=Image.open(f"Imagenes\{objeto.titulo}_ORIGINAL.jpg")
+        imagen=ImageTk.PhotoImage(img)
+        label=Label(ventana,width=940,height=580,image=imagen,anchor="center")
+        label.image=imagen
+        label.place(x=220,y=80)
 
-def VerOriginal():
-    global ventana,canvas
-    canvas.delete(tkinter.ALL)
-    print("hola")
-    posx=10
-    posy=10
-    for i in range(5):
-        canvas.create_rectangle(posx,posy,posx+10,posy+10, width=3, fill='red')
-        posx+=10
+        for f in Fil:
+            if f=="MIRRORX":
+                mirrorx=True
+            if f=="MIRRORY":
+                mirrory=True
+            if f=="DOUBLEMIRROR":
+                doublemirror=True
+        seleccionado=True
+
+def verOriginal():
+    global ventana,Imagenes,label,nombre,seleccionado
+    if seleccionado is False:
+        messagebox.showinfo(message="Primero seleccione una imagen y presione ver imagen",title="Aviso")
+    else:
+        for i in Imagenes:
+            if nombre==i.titulo:
+                Fil=i.filtros
+                objeto=i
+                break
+        img=Image.open(f"Imagenes\{objeto.titulo}_ORIGINAL.jpg")
+        imagen=ImageTk.PhotoImage(img)
+        label=Label(ventana,width=940,height=580,image=imagen,anchor="center")
+        label.image=imagen
+        label.place(x=220,y=80)
+
+def verMirrorX():
+    global combo,ventana,Imagenes,label,nombre,seleccionado,mirrorx
+    if seleccionado is False:
+        messagebox.showinfo(message="Primero seleccione una imagen y presione ver imagen",title="Aviso")
+    else:
+        if mirrorx:
+            for i in Imagenes:
+                if nombre==i.titulo:
+                    objeto=i
+                    break
+            img=Image.open(f"Imagenes\{objeto.titulo}_MIRRORX.jpg")
+            imagen=ImageTk.PhotoImage(img)
+            label=Label(ventana,width=940,height=580,image=imagen,anchor="center")
+            label.image=imagen
+            label.place(x=220,y=80)
+        else:
+           messagebox.showinfo(message="Para esta imagen no fue solicitado este filtro",title="Aviso")
+
+def verMirrorY():
+    global combo,ventana,Imagenes,label,nombre,seleccionado,mirrory
+    if seleccionado is False:
+        messagebox.showinfo(message="Primero seleccione una imagen y presione ver imagen",title="Aviso")
+    else:
+        if mirrory:
+            for i in Imagenes:
+                if nombre==i.titulo:
+                    objeto=i
+                    break
+            img=Image.open(f"Imagenes\{objeto.titulo}_MIRRORY.jpg")
+            imagen=ImageTk.PhotoImage(img)
+            label=Label(ventana,width=940,height=580,image=imagen,anchor="center")
+            label.image=imagen
+            label.place(x=220,y=80)
+        else:
+           messagebox.showinfo(message="Para esta imagen no fue solicitado este filtro",title="Aviso") 
+
+def verDoubleMirror():
+    global combo,ventana,Imagenes,label,nombre,seleccionado,doublemirror
+    if seleccionado is False:
+        messagebox.showinfo(message="Primero seleccione una imagen y presione ver imagen",title="Aviso")
+    else:
+        if doublemirror:
+            for i in Imagenes:
+                if nombre==i.titulo:
+                    objeto=i
+                    break
+            img=Image.open(f"Imagenes\{objeto.titulo}_DOUBLEMIRROR.jpg")
+            imagen=ImageTk.PhotoImage(img)
+            label=Label(ventana,width=940,height=580,image=imagen,anchor="center")
+            label.image=imagen
+            label.place(x=220,y=80)
+        else:
+           messagebox.showinfo(message="Para esta imagen no fue solicitado este filtro",title="Aviso") 
+
+def reset():
+    global combo, Imagenes,mirrorx,mirrory,doublemirror,Fil,label,seleccionado
+    #Reset del COMBOBOX
+    combo["values"]=[]
+    
+    for i in Imagenes:
+        values = list(combo["values"])
+        combo["values"] = values + [i.titulo]
+    combo.set("Seleccione una imagen")
+    print(combo.get())
+
+    #Reset de filtros leidos por imagen
+    mirrorx=False
+    mirrory=False
+    doublemirror=False
+    seleccionado=False
+
+    #Reset del label que muestra las imagenes
+    label=Label(ventana, width=135, height=40)
+    label.place(x=220,y=80)
 
 if __name__=='__main__':
     generarVentana()
