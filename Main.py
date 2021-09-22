@@ -167,7 +167,7 @@ def analizar(txt):
                 LexemaActual=""
                 estado=2
             else:
-                if ord(c)==32:
+                if isEspacio(c):
                     pass
                 else:
                     if LexemaActual=="TITULO":
@@ -206,7 +206,7 @@ def analizar(txt):
                 LexemaActual+=c
                 estado=17
             else:
-                if ord(c)==32:
+                if isEspacio(c):
                     pass
                 else:
                     Errores.append(Error(fila,columna,c,"caracter no valido"))
@@ -674,8 +674,8 @@ def generarImagenHTML():
         config = imgkit.config(wkhtmltoimage=path_wkthmltoimage)
         options = {
         'format': 'jpg',
-        'crop-h': str(imagen.ancho),
-        'crop-w': str(imagen.alto),
+        'crop-h': str(imagen.alto),
+        'crop-w': str(imagen.ancho),
         'crop-x': '0',
         'crop-y': '0',
         'encoding': "UTF-8"
