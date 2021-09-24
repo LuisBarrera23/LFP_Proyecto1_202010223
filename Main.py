@@ -413,7 +413,7 @@ def analizar(txt):
                 estado=0
             
         # logica de los filtros---------------------------------------------------------------------------
-        elif estado==17:
+        elif estado==17 and not isEspacio(c):
             if isLetra(c):
                 LexemaActual+=c
                 estado=17
